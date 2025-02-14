@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock, Plus, Trash2, AlertCircle, Loader2, Search, ChevronLeft, ChevronRight, ArrowUpDown } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { Task } from '@/types/database';
+import { useCallback } from 'react';
 
 const ITEMS_PER_PAGE = 5;
 
@@ -22,32 +23,34 @@ const TaskScheduler: React.FC = () => {
   const [sortField, setSortField] = useState<'due_date' | 'created_at'>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
-  useEffect(() => {
-    fetchTasks();
-  }, [sortField, sortDirection, statusFilter]); 
+  
 
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     try {
       let query = supabase
         .from('tasks')
         .select('*')
         .order(sortField, { ascending: sortDirection === 'asc' });
-
+  
       if (statusFilter !== 'all') {
         query = query.eq('status', statusFilter);
       }
-
+  
       const { data, error } = await query;
-
+  
       if (error) throw error;
-
+  
       setTasks(data || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }
-  };
+  }, [sortField, sortDirection, statusFilter]);
+
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
 
   const addTask = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
